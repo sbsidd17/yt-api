@@ -4,6 +4,9 @@ services:
     env: docker
     plan: free
     dockerfilePath: Dockerfile
+    repo: https://github.com/Siddwap/yt-api 
+    branch: master
+    autoDeploy: false
     port: 5000
     envVars:
       - key: PYTHON_VERSION
