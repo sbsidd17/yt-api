@@ -57,6 +57,10 @@ def get_video_info(video_url, cookie_file):
         'cookiefile': cookie_file,
         'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'referer': 'https://www.youtube.com/',
+        'geo_bypass': True,
+        'nocheckcertificate': True,
+        'ignoreerrors': True,
+        'youtube_include_dash_manifest': False,
     }
     
     try:
@@ -106,6 +110,91 @@ def format_response(video_info):
                 quality_map[fmt['quality']] = fmt
             elif fmt.get('audio_url') and quality_map[fmt['quality']].get('video_url'):
                 quality_map[fmt['quality']]['audio_url'] = fmt['audio_url']
+                quality_map[fmt['quality']]['audio_ext'] = fmt['audio_ext']
+                quality_map[fmt['quality']]['audio_size'] = fmt['audio_size']
+    
+    for quality in sorted(quality_map.keys(), reverse=True):
+        if quality > 0:
+            organized_formats.append(quality_map[quality])
+    
+    # Add audio-only entry
+    audio_format = next((fmt for fmt in formats if fmt['quality'] == 0), None)
+    if audio_format:
+        organized_formats.append({
+            "media_type": "audio",
+            "resource_url": audio_format.get('url', ''),
+            "preview_url": video_info.get('thumbnail', '')
+        })
+    
+    response = {
+        "text": video_info.get('title', ''),
+        "medias": [
+            {
+                "media_type": "video",
+                "resource_url": video_info.get('webpage_url', ''),
+                "preview_url": video_info.get('thumbnail', ''),
+                "formats": organized_formats
+            }
+        ],
+        "overseas": 1
+    }
+    
+    return response
+
+@app.route('/')
+def home():
+    return {"message": "Welcome to YouTube Video Link Extractor API"}
+
+@app.route('/extract')
+def extract_youtube_links():
+    """Main endpoint for extracting YouTube video links"""
+    yt_link = request.args.get('ytlink')
+    
+    if not yt_link:
+        return jsonify({"error": "No YouTube link provided"}), 400
+    
+    try:
+        video_id = extract_video_id(yt_link)
+        if not video_id:
+            return jsonify({"error": "Invalid YouTube URL"}), 400
+        
+        standard_url = f"https://www.youtube.com/watch?v={video_id}"
+        
+        # Create cookies file
+        cookie_file = get_cookies_file()
+        
+        video_info = get_video_info(standard_url, cookie_file)
+        
+        # Clean up cookie file
+        try:
+            os.unlink(cookie_file)
+        except:
+            pass
+        
+        if not video_info:
+            return jsonify({
+                "error": "Could not extract video information",
+                "solution": "YouTube cookies may have expired or are invalid. Please provide fresh YouTube cookies."
+            }), 500
+        
+        formatted_response = format_response(video_info)
+        if not formatted_response:
+            return jsonify({"error": "Could not format response"}), 500
+        
+        return jsonify(formatted_response)
+    except Exception as e:
+        return jsonify({
+            "error": f"Failed to process request: {str(e)}",
+            "solution": "Check if your cookies are valid and not expired."
+        }), 500
+
+@app.route('/health')
+def health_check():
+    """Health check endpoint"""
+    return jsonify({"status": "healthy", "service": "youtube-extractor-api"})
+
+if __name__ == '__main__':
+    app.run(debug=False, host='0.0.0.0', port=5000)                quality_map[fmt['quality']]['audio_url'] = fmt['audio_url']
                 quality_map[fmt['quality']]['audio_ext'] = fmt['audio_ext']
                 quality_map[fmt['quality']]['audio_size'] = fmt['audio_size']
     
