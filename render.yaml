@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: youtube-extractor-api
+    env: docker
+    plan: free
+    dockerfilePath: Dockerfile
+    port: 5000
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
