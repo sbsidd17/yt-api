@@ -36,7 +36,7 @@ def get_cookies():
             # Use default cookies if none provided
             return {
                 'CONSENT': 'YES+cb.20210328-17-p0.en-GB+FX+{}'.format(100),
-                'SOCS': 'CAISNQgEEitib3FfaWRlbnRpdHlmcm9udGVuZHVpc2VydmVyXzIwMjMwNzI1LjA2X3AwGgJlbiACGgYIgL6ElgU'
+                'SOCS': 'CAISNQgEEitib3FfaWRlbnRpdHlmcm9ontGVuZHVpc2VydmVyXzIwMjMwNzI1LjA2X3AwGgJlbiACGgYIgL6ElgU'
             }
         
         # Convert browser cookies to yt-dlp format
@@ -190,78 +190,6 @@ def extract_youtube_links():
         return jsonify({
             "error": f"Failed to process request: {str(e)}",
             "solution": "Check if your cookies are valid and not expired."
-        }), 500
-
-@app.route('/health')
-def health_check():
-    """Health check endpoint"""
-    return jsonify({"status": "healthy", "service": "youtube-extractor-api"})
-
-if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0', port=5000)                quality_map[fmt['quality']]['audio_size'] = fmt['audio_size']
-    
-    for quality in sorted(quality_map.keys(), reverse=True):
-        if quality > 0:
-            organized_formats.append(quality_map[quality])
-    
-    # Add audio-only entry
-    audio_format = next((fmt for fmt in formats if fmt['quality'] == 0), None)
-    if audio_format:
-        organized_formats.append({
-            "media_type": "audio",
-            "resource_url": audio_format.get('url', ''),
-            "preview_url": video_info.get('thumbnail', '')
-        })
-    
-    response = {
-        "text": video_info.get('title', ''),
-        "medias": [
-            {
-                "media_type": "video",
-                "resource_url": video_info.get('url', ''),
-                "preview_url": video_info.get('thumbnail', ''),
-                "formats": organized_formats
-            }
-        ],
-        "overseas": 1
-    }
-    
-    return response
-
-@app.route('/')
-def extract_youtube_links():
-    """Main endpoint for extracting YouTube video links"""
-    yt_link = request.args.get('ytlink')
-    
-    if not yt_link:
-        return jsonify({"error": "No YouTube link provided"}), 400
-    
-    # Extract cookies from request or use defaults
-    cookies = get_cookies_from_request()
-    
-    try:
-        video_id = extract_video_id(yt_link)
-        if not video_id:
-            return jsonify({"error": "Invalid YouTube URL"}), 400
-        
-        standard_url = f"https://www.youtube.com/watch?v={video_id}"
-        
-        video_info = get_video_info(standard_url, cookies)
-        if not video_info:
-            return jsonify({
-                "error": "Could not extract video information",
-                "solution": "Try providing fresh YouTube cookies using the 'cookies' parameter"
-            }), 500
-        
-        formatted_response = format_response(video_info)
-        if not formatted_response:
-            return jsonify({"error": "Could not format response"}), 500
-        
-        return jsonify(formatted_response)
-    except Exception as e:
-        return jsonify({
-            "error": f"Failed to process request: {str(e)}",
-            "solution": "Ensure you're providing valid YouTube cookies if required"
         }), 500
 
 @app.route('/health')
