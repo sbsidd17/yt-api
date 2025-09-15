@@ -2,10 +2,11 @@ FROM python:3.11-slim-bullseye
 
 WORKDIR /app
 
-# Install system dependencies required by yt-dlp
+# Install system dependencies including ffmpeg and other required packages
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     curl \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -15,5 +16,4 @@ COPY . .
 
 EXPOSE 5000
 
-# Run the application with Gunicorn
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
